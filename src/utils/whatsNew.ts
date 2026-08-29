@@ -28,10 +28,14 @@ export const BUY_ME_A_COFFEE_IMAGE_URL =
 
 /**
  * Markdown rendered inside the "What's New" modal. Leads with the newest
- * provider (MiniMax), then the Voice player and everything added since 1.8.0,
- * so both new and long-time users catch up at a glance.
+ * OpenAI delivery controls, then MiniMax, the Voice player, and everything
+ * added since 1.8.0 so both new and long-time users catch up at a glance.
  */
-export const WHATS_NEW = `## 🆕 New: MiniMax — text-to-speech that works from China
+export const WHATS_NEW = `## 🎭 Direct OpenAI's speaking style
+
+Using **GPT-4o mini TTS**? Open **Settings → Voice → OpenAI** and add **Speech instructions** to guide tone, pacing, emotion, accent, and delivery. Voice applies the same instructions to every chunk, keeping longer notes stylistically consistent.
+
+## 🆕 New: MiniMax — text-to-speech that works from China
 
 Voice's **sixth provider** is here: **MiniMax**. It's a great fit for **Chinese-language** notes — and, crucially, it's reachable from **mainland China**, where the other engines often aren't.
 

@@ -52,6 +52,9 @@ export interface VoiceSettings {
   OPENAI_API_KEY: string;
   OPENAI_VOICE: string;
   OPENAI_MODEL: string;
+  // Optional delivery guidance for gpt-4o-mini-tts (tone, pacing, emotion,
+  // accent, and speaking style). Legacy tts-1 models do not support it.
+  OPENAI_INSTRUCTIONS: string;
 
   // MiniMax Text-to-Speech (T2A v2). MiniMax needs both an API key and a
   // Group ID (the Group ID is sent as a query parameter). MINIMAX_HOST selects
@@ -438,6 +441,7 @@ export const DEFAULT_SETTINGS: VoiceSettings = {
   OPENAI_API_KEY: "",
   OPENAI_VOICE: "alloy",
   OPENAI_MODEL: "gpt-4o-mini-tts",
+  OPENAI_INSTRUCTIONS: "",
 
   MINIMAX_API_KEY: "",
   MINIMAX_GROUP_ID: "",

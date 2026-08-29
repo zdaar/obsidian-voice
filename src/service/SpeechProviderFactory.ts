@@ -44,6 +44,7 @@ export function createSpeechProvider(settings: VoiceSettings): SpeechProvider {
       settings.OPENAI_VOICE,
       settings.OPENAI_MODEL,
       Number(settings.SPEED),
+      settings.OPENAI_INSTRUCTIONS,
     );
   } else if (settings.TTS_PROVIDER === "minimax") {
     provider = new MiniMaxSpeechService(

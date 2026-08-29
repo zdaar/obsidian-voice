@@ -33,11 +33,19 @@ export class OpenAiSpeechService extends BaseSpeechService {
 
   private apiKey: string;
   private model: string;
+  private instructions: string;
 
-  constructor(apiKey: string, voice: string, model: string, speed?: number) {
+  constructor(
+    apiKey: string,
+    voice: string,
+    model: string,
+    speed?: number,
+    instructions = "",
+  ) {
     super(voice, speed);
     this.apiKey = apiKey;
     this.model = model || "gpt-4o-mini-tts";
+    this.instructions = instructions;
   }
 
   getVoiceOptions(): VoiceOption[] {
@@ -47,6 +55,12 @@ export class OpenAiSpeechService extends BaseSpeechService {
   updateCredentials(settings: VoiceSettings): void {
     this.apiKey = settings.OPENAI_API_KEY;
     this.model = settings.OPENAI_MODEL || "gpt-4o-mini-tts";
+    this.instructions = settings.OPENAI_INSTRUCTIONS;
+  }
+
+  /** Only GPT-4o mini TTS accepts delivery instructions. */
+  private supportsInstructions(): boolean {
+    return this.model === "gpt-4o-mini-tts";
   }
 
   /**
@@ -128,6 +142,9 @@ export class OpenAiSpeechService extends BaseSpeechService {
         input: text,
         voice: this.voice,
         response_format: "mp3",
+        ...(this.supportsInstructions() && this.instructions.trim()
+          ? { instructions: this.instructions.trim() }
+          : {}),
       }),
       throw: false,
     });
