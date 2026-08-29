@@ -7,7 +7,10 @@ import {
   normalizePath,
 } from "obsidian";
 import type { Voice } from "../utils/VoicePlugin";
-import type { TtsProvider } from "../settings/VoiceSettings";
+import type {
+  ChapterPlaybackMode,
+  TtsProvider,
+} from "../settings/VoiceSettings";
 import { mp3FilesInFolder } from "../utils/folderAudio";
 import {
   chapterName,
@@ -20,13 +23,12 @@ import {
 import { attachPressGesture } from "../utils/pressGesture";
 import { noteAudioPath } from "../utils/audioFolders";
 import { groupVoicesByLanguage } from "../service/voiceCatalog";
+import { chapterEndAction } from "../utils/chapterPlayback";
 
 export const VIEW_TYPE_VOICE_PLAYER = "voice-player-view";
 
 const MIN_SPEED = 0.5;
 const MAX_SPEED = 2.0;
-
-type RepeatMode = "none" | "one" | "all";
 
 /** Selectable TTS providers, mirroring the settings tab. */
 const PROVIDERS: { id: TtsProvider; label: string }[] = [
@@ -59,7 +61,7 @@ export class VoicePlayerView extends ItemView {
   private playPauseBtn: HTMLElement;
   private prevTrackBtn: HTMLElement;
   private nextTrackBtn: HTMLElement;
-  private repeatBtn: HTMLElement;
+  private playbackModeSelect: HTMLSelectElement;
   private speedEl: HTMLElement;
   private chaptersListEl: HTMLElement;
   private downloadBtn: HTMLButtonElement;
@@ -84,7 +86,6 @@ export class VoicePlayerView extends ItemView {
   // selected in the folder picker (drives the chapter list).
   private folders: Mp3Folder[] = [];
   private selectedFolderPath: string | null = null;
-  private repeatMode: RepeatMode = "none";
   private endedHandled = false;
   // The open per-chapter action bar (Move / Rename / Delete) and a disposer for
   // its outside-click / Escape listeners, if one is currently shown.
@@ -238,8 +239,8 @@ export class VoicePlayerView extends ItemView {
       this.playNextTrack(),
     );
 
-    // Controls row: download + folder + repeat + speed, then the on/off
-    // toggles (code / acronyms / embed), spread evenly across the row.
+    // Controls row: save actions + speed, then the on/off content toggles,
+    // spread evenly across the row.
     const secondary = root.createDiv({ cls: "voice-player-secondary" });
 
     // Save the generated audio as an MP3 so it shows up as a chapter. Tap saves
@@ -270,13 +271,6 @@ export class VoicePlayerView extends ItemView {
     this.registerDomEvent(this.folderBtn, "click", () =>
       this.saveToCustomFolder(),
     );
-
-    // Repeat: cycle off → repeat one → repeat all → off.
-    this.repeatBtn = secondary.createEl("button", {
-      cls: "voice-player-repeat",
-    });
-    this.registerDomEvent(this.repeatBtn, "click", () => this.cycleRepeat());
-    this.updateRepeatButton();
 
     const speedGroup = secondary.createDiv({ cls: "voice-player-speed" });
     const slower = speedGroup.createEl("button", {
@@ -351,6 +345,38 @@ export class VoicePlayerView extends ItemView {
     });
     this.registerDomEvent(this.folderSelect, "change", () =>
       this.changeFolder(this.folderSelect.value),
+    );
+
+    // Make end-of-note behaviour explicit. "Stop" is the safe default so a
+    // single note never turns into an unexpected folder-wide playlist.
+    const playbackRow = root.createDiv({ cls: "voice-player-playback-mode" });
+    playbackRow
+      .createSpan({ cls: "voice-player-playback-label" })
+      .setText("After this note");
+    this.playbackModeSelect = playbackRow.createEl("select", {
+      cls: "voice-player-select dropdown",
+      attr: { "aria-label": "What to do after this note finishes" },
+    });
+    this.playbackModeSelect.createEl("option", {
+      value: "stop",
+      text: "Stop",
+    });
+    this.playbackModeSelect.createEl("option", {
+      value: "continue",
+      text: "Play next note",
+    });
+    this.playbackModeSelect.createEl("option", {
+      value: "repeat-one",
+      text: "Repeat this note",
+    });
+    this.playbackModeSelect.createEl("option", {
+      value: "repeat-all",
+      text: "Repeat folder",
+    });
+    this.registerDomEvent(this.playbackModeSelect, "change", () =>
+      this.changePlaybackMode(
+        this.playbackModeSelect.value as ChapterPlaybackMode,
+      ),
     );
 
     // Chapters
@@ -566,6 +592,12 @@ export class VoicePlayerView extends ItemView {
     void this.plugin.persistActiveVoice(voiceId);
   }
 
+  /** Persist what happens when the current note/chapter finishes. */
+  private changePlaybackMode(mode: ChapterPlaybackMode): void {
+    this.plugin.settings.chapterPlaybackMode = mode;
+    void this.plugin.saveSettings();
+  }
+
   /** Toggle whether code blocks are read aloud. */
   private toggleCodeBlocks(): void {
     this.plugin.settings.readCodeBlocks = !this.plugin.settings.readCodeBlocks;
@@ -604,6 +636,7 @@ export class VoicePlayerView extends ItemView {
       return;
     }
     this.providerSelect.value = this.plugin.settings.TTS_PROVIDER;
+    this.playbackModeSelect.value = this.plugin.settings.chapterPlaybackMode;
     this.populateVoiceOptions();
     this.updateCodeButton();
     this.updateAcronymButton();
@@ -1176,55 +1209,20 @@ export class VoicePlayerView extends ItemView {
     );
   }
 
-  /** Cycle the repeat mode: off → repeat one → repeat all → off. */
-  private cycleRepeat(): void {
-    this.repeatMode =
-      this.repeatMode === "none"
-        ? "one"
-        : this.repeatMode === "one"
-          ? "all"
-          : "none";
-    this.updateRepeatButton();
-  }
-
-  private updateRepeatButton(): void {
-    if (!this.repeatBtn) {
-      return;
-    }
-    const icon = this.repeatMode === "one" ? "repeat-1" : "repeat";
-    setIcon(this.repeatBtn, icon);
-    this.repeatBtn.toggleClass("is-active", this.repeatMode !== "none");
-    const label =
-      this.repeatMode === "one"
-        ? "Repeat one"
-        : this.repeatMode === "all"
-          ? "Repeat all"
-          : "Repeat off";
-    this.repeatBtn.setAttribute("aria-label", label);
-  }
-
-  /**
-   * Called when the current audio finishes. Honors the repeat mode and
-   * auto-advances through the chapter list.
-   */
+  /** Apply the user's explicit end-of-note playback choice. */
   private handleEnded(): void {
-    if (this.repeatMode === "one") {
+    const action = chapterEndAction(
+      this.plugin.settings.chapterPlaybackMode,
+      this.currentChapterIndex(),
+      this.chapters.length,
+    );
+
+    if (action.type === "replay") {
       const audio = this.audio();
       audio.currentTime = 0;
       void this.provider().playAudio();
-      return;
-    }
-
-    // Auto-advance only makes sense while a chapter is playing.
-    const index = this.currentChapterIndex();
-    if (index < 0) {
-      return;
-    }
-    const next = index + 1;
-    if (next < this.chapters.length) {
-      this.playChapter(this.chapters[next].path);
-    } else if (this.repeatMode === "all" && this.chapters.length > 0) {
-      this.playChapter(this.chapters[0].path);
+    } else if (action.type === "play") {
+      this.playChapter(this.chapters[action.index].path);
     }
   }
 

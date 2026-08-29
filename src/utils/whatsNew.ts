@@ -28,10 +28,14 @@ export const BUY_ME_A_COFFEE_IMAGE_URL =
 
 /**
  * Markdown rendered inside the "What's New" modal. Leads with the newest
- * OpenAI delivery controls, then MiniMax, the Voice player, and everything
+ * playback and OpenAI controls, then MiniMax, the Voice player, and everything
  * added since 1.8.0 so both new and long-time users catch up at a glance.
  */
-export const WHATS_NEW = `## 🎭 Direct OpenAI's speaking style
+export const WHATS_NEW = `## 🎧 Play one note—or choose what comes next
+
+The player now has an explicit **After this note** selector: **Stop** (the safe default), **Play next note**, **Repeat this note**, or **Repeat folder**. Your choice is remembered, so reading one note no longer rolls into every saved note unless you ask it to.
+
+## 🎭 Direct OpenAI's speaking style
 
 Using **GPT-4o mini TTS**? Open **Settings → Voice → OpenAI** and add **Speech instructions** to guide tone, pacing, emotion, accent, and delivery. Voice applies the same instructions to every chunk, keeping longer notes stylistically consistent.
 
