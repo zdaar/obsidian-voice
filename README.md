@@ -41,14 +41,13 @@ The Voice player is the heart of the plugin: an audiobook-style pane that turns 
 
 #### Controls at a glance
 
-Every control is a single button. Some do **two things**: a quick **tap** and a **press & hold** (~1.5 s; right-click works too on desktop). A ring fills around a button while you hold it.
+The main transport and action controls are buttons. Some do **two things**: a quick **tap** and a **press & hold** (~1.5 s; right-click works too on desktop). A ring fills around a button while you hold it; the **After this note** selector controls what happens when playback finishes.
 
 | Button                                        | Tap                                                              | Press & hold                                                            |
 | --------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | ▶️ **Play**                                   | Play, pause, or cancel a synthesis that's running                | **Regenerate** the note from scratch with your current voice & settings |
 | ⏮ ⏭ **Prev / next**                         | Jump to the previous / next chapter                              | —                                                                       |
 | ⏪ ⏩ **Rewind / forward**                    | Jump back / ahead by your interval (default 3 s)                 | —                                                                       |
-| 🔁 **Repeat**                                 | Cycle _off → repeat one → repeat all_                            | —                                                                       |
 | **− / +** **Speed**                           | Slow down / speed up playback (0.5×–2.0×)                        | —                                                                       |
 | ⬇️ **Save** (💾 when a default folder is set) | Save the MP3 now — next to the note, or into your default folder | Open the **folder picker** to save elsewhere or set a default           |
 | 📂 **Folder**                                 | Save into a folder you pick, in one click                        | —                                                                       |
@@ -59,6 +58,8 @@ Every control is a single button. Some do **two things**: a quick **tap** and a 
 | ⋮ **Track menu**                              | Open **Move / Rename / Delete** for that chapter                 | —                                                                       |
 
 Each toggle (`</>` `Aa` 🔗 📎) **highlights when it's on**, so you can see your reading options at a glance — no trip to settings.
+
+Use **After this note** to choose exactly what happens when playback finishes: **Stop** (the default), **Play next note**, **Repeat this note**, or **Repeat folder**. The choice is remembered, and generated notes never unexpectedly jump into the saved-audio folder.
 
 > **Jumping between notes?** By default a tap on ▶️ plays the note you're viewing — its already-saved MP3 if one exists, otherwise a fresh render — so you don't re-generate audio you already saved. Turn this off with **Play the note's saved audio** in settings.
 

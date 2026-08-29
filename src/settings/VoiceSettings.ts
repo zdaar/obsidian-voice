@@ -18,6 +18,13 @@ export type TtsProvider =
  */
 export type AudioSaveMode = "note" | "custom";
 
+/** What the chapter player does when the current audio finishes. */
+export type ChapterPlaybackMode =
+  | "stop"
+  | "continue"
+  | "repeat-one"
+  | "repeat-all";
+
 export interface VoiceSettings {
   // Active text-to-speech provider
   TTS_PROVIDER: TtsProvider;
@@ -83,6 +90,9 @@ export interface VoiceSettings {
   // loaded, so jumping between notes picks up each note's saved audio. When
   // false, a loaded chapter keeps playing and notes are always synthesized.
   playNoteSavedAudio: boolean;
+  // Player: what happens when the current note/chapter finishes. Defaults to
+  // stopping so playing a note never unexpectedly continues through a folder.
+  chapterPlaybackMode: ChapterPlaybackMode;
   // Audio files: the default folder for saved MP3s. When set, a tap on the save
   // button always saves here (and auto-save writes here silently); when empty,
   // saves go next to the active note. Managed from the folder picker's pin
@@ -460,6 +470,7 @@ export const DEFAULT_SETTINGS: VoiceSettings = {
   forwardSeconds: DEFAULT_SKIP_SECONDS,
   folderSelectorFollowsNote: true,
   playNoteSavedAudio: true,
+  chapterPlaybackMode: "stop",
   defaultAudioFolder: "",
   favoriteAudioFolders: [],
   audioFolderMigrated: false,

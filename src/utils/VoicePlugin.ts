@@ -10,6 +10,7 @@ import { TextSpeaker } from "./TextSpeaker";
 import { VoicePlayerView, VIEW_TYPE_VOICE_PLAYER } from "../ui/VoicePlayerView";
 import { WhatsNewModal } from "../ui/WhatsNewModal";
 import { shouldShowWhatsNew } from "./whatsNew";
+import { normalizeChapterPlaybackMode } from "./chapterPlayback";
 
 export class Voice extends Plugin {
   settings: VoiceSettings;
@@ -135,6 +136,9 @@ export class Voice extends Plugin {
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings.chapterPlaybackMode = normalizeChapterPlaybackMode(
+      this.settings.chapterPlaybackMode,
+    );
 
     // One-time migration: versions up to 1.7.3 shipped spellOutAcronyms with a
     // stale `true` default that got persisted on any settings change. Reset it
