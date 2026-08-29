@@ -89,9 +89,86 @@ describe("Unit Tests - OpenAI Provider", () => {
       expect(body.voice).toBe("nova");
       expect(body.model).toBe("gpt-4o-mini-tts");
       expect(body.response_format).toBe("mp3");
+      expect(body.instructions).toBeUndefined();
 
       // Audio should be cached for the active note (download support)
       expect(service.getLastGeneratedAudio("note.md")).not.toBeNull();
+    });
+
+    test("sends trimmed speech instructions with GPT-4o mini TTS", async () => {
+      mockRequestUrl.mockResolvedValue({
+        status: 200,
+        arrayBuffer: new ArrayBuffer(16),
+      });
+
+      const service = new OpenAiSpeechService(
+        "key",
+        "sage",
+        "gpt-4o-mini-tts",
+        1.0,
+        "  Speak calmly with natural pauses.  ",
+      );
+      await service.speak("A short passage.");
+
+      const body = JSON.parse(mockRequestUrl.mock.calls[0][0].body);
+      expect(body.instructions).toBe("Speak calmly with natural pauses.");
+    });
+
+    test("omits unsupported instructions for legacy TTS models", async () => {
+      mockRequestUrl.mockResolvedValue({
+        status: 200,
+        arrayBuffer: new ArrayBuffer(16),
+      });
+
+      const service = new OpenAiSpeechService(
+        "key",
+        "alloy",
+        "tts-1-hd",
+        1.0,
+        "Speak dramatically.",
+      );
+      await service.speak("A short passage.");
+
+      const body = JSON.parse(mockRequestUrl.mock.calls[0][0].body);
+      expect(body.instructions).toBeUndefined();
+    });
+
+    test("applies instruction and model changes to an existing provider", async () => {
+      mockRequestUrl.mockResolvedValue({
+        status: 200,
+        arrayBuffer: new ArrayBuffer(16),
+      });
+
+      const service = new OpenAiSpeechService(
+        "old-key",
+        "alloy",
+        "gpt-4o-mini-tts",
+        1.0,
+      );
+      service.updateCredentials({
+        ...DEFAULT_SETTINGS,
+        OPENAI_API_KEY: "new-key",
+        OPENAI_MODEL: "gpt-4o-mini-tts",
+        OPENAI_INSTRUCTIONS: "Use a precise teaching style.",
+      });
+      await service.speak("First passage.");
+
+      let call = mockRequestUrl.mock.calls[0][0];
+      expect(call.headers.Authorization).toBe("Bearer new-key");
+      expect(JSON.parse(call.body).instructions).toBe(
+        "Use a precise teaching style.",
+      );
+
+      service.updateCredentials({
+        ...DEFAULT_SETTINGS,
+        OPENAI_API_KEY: "new-key",
+        OPENAI_MODEL: "tts-1",
+        OPENAI_INSTRUCTIONS: "This must not be sent.",
+      });
+      await service.speak("Second passage.");
+
+      call = mockRequestUrl.mock.calls[1][0];
+      expect(JSON.parse(call.body).instructions).toBeUndefined();
     });
 
     test("chunks long text into multiple requests", async () => {
@@ -104,10 +181,21 @@ describe("Unit Tests - OpenAI Provider", () => {
       const paragraph = "word ".repeat(300).trim(); // ~1500 chars
       const longText = [paragraph, paragraph].join("\n\n");
 
-      const service = new OpenAiSpeechService("key", "alloy", "tts-1", 1.0);
+      const service = new OpenAiSpeechService(
+        "key",
+        "alloy",
+        "gpt-4o-mini-tts",
+        1.0,
+        "Keep a consistent audiobook style.",
+      );
       await service.speak(longText);
 
       expect(mockRequestUrl.mock.calls.length).toBeGreaterThan(1);
+      for (const [call] of mockRequestUrl.mock.calls) {
+        expect(JSON.parse(call.body).instructions).toBe(
+          "Keep a consistent audiobook style.",
+        );
+      }
     });
 
     test("throws and reports an error when the API key is missing", async () => {
@@ -135,6 +223,16 @@ describe("Unit Tests - OpenAI Provider", () => {
 });
 
 describe("Unit Tests - Speech Provider Factory (OpenAI)", () => {
+  beforeEach(() => {
+    mockRequestUrl.mockReset();
+  });
+
+  test("defaults instructions when loading pre-feature settings", () => {
+    const persistedBeforeFeature = { OPENAI_MODEL: "gpt-4o-mini-tts" };
+    const loaded = Object.assign({}, DEFAULT_SETTINGS, persistedBeforeFeature);
+    expect(loaded.OPENAI_INSTRUCTIONS).toBe("");
+  });
+
   test("creates a text provider for OpenAI", () => {
     const provider = createSpeechProvider({
       ...DEFAULT_SETTINGS,
@@ -142,5 +240,23 @@ describe("Unit Tests - Speech Provider Factory (OpenAI)", () => {
     });
     expect(provider.inputFormat).toBe("text");
     expect(provider.getVoiceOptions().some((v) => v.id === "alloy")).toBe(true);
+  });
+
+  test("passes configured instructions to the OpenAI provider", async () => {
+    mockRequestUrl.mockResolvedValue({
+      status: 200,
+      arrayBuffer: new ArrayBuffer(16),
+    });
+    const provider = createSpeechProvider({
+      ...DEFAULT_SETTINGS,
+      TTS_PROVIDER: "openai",
+      OPENAI_API_KEY: "key",
+      OPENAI_INSTRUCTIONS: "Use a measured documentary style.",
+    });
+
+    await provider.speak("Factory-created provider.");
+
+    const body = JSON.parse(mockRequestUrl.mock.calls[0][0].body);
+    expect(body.instructions).toBe("Use a measured documentary style.");
   });
 });

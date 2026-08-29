@@ -172,6 +172,14 @@
   white-space: nowrap;
 }
 
+/* OpenAI delivery instructions need room for a useful multi-line prompt. */
+.voice-openai-instructions {
+  width: 24rem;
+  max-width: 100%;
+  min-height: 6rem;
+  resize: vertical;
+}
+
 /* --- Settings: credential validation panel --- */
 .voice-validation-container {
   margin-top: 16px;

@@ -509,6 +509,26 @@ export class VoiceSettingTab extends PluginSettingTab {
           });
       });
 
+    new Setting(containerEl)
+      .setName("Speech instructions")
+      .setDesc(
+        "Optional guidance for tone, pacing, emotion, accent, or speaking style. Applied to every chunk when using GPT-4o mini TTS; TTS-1 models do not support instructions.",
+      )
+      .addTextArea((textArea) => {
+        textArea
+          .setPlaceholder(
+            "Read in a calm, warm, unhurried audiobook style with natural pauses.",
+          )
+          .setValue(this.plugin.settings.OPENAI_INSTRUCTIONS)
+          .onChange(async (value) => {
+            this.plugin.settings.OPENAI_INSTRUCTIONS = value;
+            await this.plugin.saveSettings();
+            this.plugin.reinitializeProviderCredentials();
+          });
+        textArea.inputEl.rows = 4;
+        textArea.inputEl.addClass("voice-openai-instructions");
+      });
+
     this.addPasswordSetting(
       containerEl,
       "OpenAI API Key",

@@ -1,5 +1,3 @@
-
-
 # Obsidian Voice Plugin 🔊
 
 ![Obsidian Voice — listen to your notes in natural, lifelike speech with AWS Polly, ElevenLabs, Google Cloud, Azure Speech, OpenAI, or MiniMax](./assets/hero.png)
@@ -182,6 +180,7 @@ Configure your provider and credentials in **Settings → Voice**. The settings 
 | **Save location**               | Where saved MP3s go. Next to the note by default. Hold the save button to open the folder picker, then pin (📌) a folder as your default; tap the pin again to clear it. Star (⭐) folders for quick access.                                                                              |
 | **Folder list follows note**    | Player's folder picker auto-switches to the folder of the note you're viewing. On by default; turn off to keep your chosen folder.                                                                                                                                                        |
 | **Play the note's saved audio** | On play, load the MP3 already saved for the note you're viewing (matched by name) instead of re-generating it — so jumping between notes picks up each note's audio, even with another chapter loaded. On by default; turn off to keep the loaded chapter playing and always re-generate. |
+| **Speech instructions**         | With OpenAI GPT-4o mini TTS, guide the narration's tone, pacing, emotion, accent, and speaking style. The same instructions are applied to every chunk of a long note.                                                                                                                    |
 | **Test Credentials**            | Validate your provider keys; on success it reports how many voices are available.                                                                                                                                                                                                         |
 
 ## Keyboard Shortcuts
@@ -240,7 +239,7 @@ Start with the provider you already have — you can switch anytime.
 
 **Azure Speech** — In the [Azure portal](https://portal.azure.com/), create a **Speech** resource and copy a **Key** and **Region**. In **Settings → Voice**, choose **Azure Speech**, select the matching region, pick a voice, paste the key, and press **Test Credentials**.
 
-**OpenAI** — Create an API key at [platform.openai.com/api-keys](https://platform.openai.com/api-keys). In **Settings → Voice**, choose **OpenAI**, pick a model and voice, paste the key, and press **Test Credentials**.
+**OpenAI** — Create an API key at [platform.openai.com/api-keys](https://platform.openai.com/api-keys). In **Settings → Voice**, choose **OpenAI**, pick a model and voice, paste the key, and press **Test Credentials**. With **GPT-4o mini TTS**, use **Speech instructions** to describe the tone, pacing, emotion, accent, or speaking style you want (for example, “Read in a calm, warm audiobook style with natural pauses”). Instructions are sent with every chunk of a long note; the legacy TTS-1 models do not support them. Sample the built-in voices at [OpenAI.fm](https://www.openai.fm/).
 
 **MiniMax** — Sign in at [platform.minimax.io](https://platform.minimax.io/) (or [platform.minimaxi.com](https://platform.minimaxi.com/) for mainland China) and copy your **API key** and **Group ID**. In **Settings → Voice**, choose **MiniMax**, select the matching **region**, pick a model and voice, paste the key and Group ID, and press **Test Credentials**.
 
